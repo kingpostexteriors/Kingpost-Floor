@@ -1,0 +1,22 @@
+KINGPOST FLOOR — get it on the shop PC
+=====================================
+
+Grok’s preview cannot save a zip to your computer. Use GitHub instead.
+
+1. Open this page in your normal browser (Chrome/Edge, not the Grok preview):
+
+   https://github.com/kingpostexteriors/Kingpost-Floor
+
+2. Click the green Code button.
+3. Click Download ZIP.
+4. Unzip it next to KingpostJim:
+
+      C:\Users\1951\Kingpost-Floor-main
+      C:\Users\1951\KingpostJim
+
+5. Open the Floor folder. Double-click “Start Floor”.
+6. First time only: if a Node.js page opens, install LTS, then double-click
+   Start Floor again. Leave that window open while you work.
+
+Test texts: 712-309-6810 (always TEST)
+Shop line:  712-318-1911 (customers)
