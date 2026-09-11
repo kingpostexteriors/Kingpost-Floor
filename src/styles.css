@@ -1,0 +1,57 @@
+@import "tailwindcss";
+
+@theme {
+  --color-charcoal: #141a20;
+  --color-copper: #b3703e;
+  --color-cta: #c4813f;
+  --color-cream: #f3eee6;
+  --color-bg: var(--color-charcoal);
+  --color-fg: var(--color-cream);
+  --color-primary: var(--color-cta);
+  --color-primary-fg: var(--color-charcoal);
+  --color-ring: var(--color-copper);
+  --color-surface: color-mix(in oklab, var(--color-charcoal) 90%, var(--color-cream) 10%);
+  --color-raised: color-mix(in oklab, var(--color-charcoal) 82%, var(--color-cream) 18%);
+  --color-muted: color-mix(in oklab, var(--color-cream) 58%, var(--color-charcoal) 42%);
+  --color-subtle: color-mix(in oklab, var(--color-cream) 40%, var(--color-charcoal) 60%);
+  --color-border: color-mix(in oklab, var(--color-cream) 12%, transparent);
+  --color-ok: #7d9a72;
+  --color-warn: #c4a15a;
+  --color-danger: #c45c4a;
+  --font-display: "Fraunces", "Times New Roman", serif;
+  --font-sans: "Oswald", "Arial Narrow", sans-serif;
+  --font-body: "Fraunces", "Times New Roman", serif;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-xl: 28px;
+  --shadow-panel: 0 12px 40px color-mix(in oklab, var(--color-charcoal) 80%, black);
+}
+
+@layer base {
+  html, body, #app {
+    min-height: 100%;
+    background-color: var(--color-charcoal);
+    color: var(--color-cream);
+  }
+  body {
+    font-family: var(--font-body);
+    line-height: 1.5;
+  }
+  h1, h2, h3 {
+    font-family: var(--font-display);
+    letter-spacing: -0.03em;
+  }
+}
+
+.label {
+  font-family: var(--font-sans);
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-size: 0.68rem;
+  color: var(--color-subtle);
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
