@@ -39,7 +39,6 @@ function Command() {
   const flags = useFloor((s) => s.flags);
   const models = useFloor((s) => s.models);
   const health = healthOf({ systemOn, testMode, mode, flags, models });
-
   return (
     <div className="min-h-dvh bg-bg pb-16">
       <header className="border-b border-border px-4 py-4 sm:px-8">
@@ -48,9 +47,7 @@ function Command() {
             <p className="label">Kingpost Exteriors</p>
             <h1 className="mt-1 font-display text-3xl font-medium text-cream">Command</h1>
             <p className="mt-1 max-w-xl text-sm text-muted">
-              {pair === "paired"
-                ? "Jim’s desk — edit, approve, or hand a fix to Michael."
-                : "Waiting to read KingpostJim on this PC."}
+              {pair === "paired" ? "Jim’s desk — edit, approve, or Fix with Grok." : "Waiting to read KingpostJim on this PC."}
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -107,12 +104,10 @@ function JimDesk() {
   const queue = useFloor((s) => s.queue);
   const flags = useFloor((s) => s.flags);
   const resolveFlag = useFloor((s) => s.resolveFlag);
-  const waiting = useFloor((s) => s.fixes.filter((f) => f.status === "for-michael").length);
   const pending = queue.filter((q) => q.status === "pending");
   return (
     <div className="space-y-4">
       <CommandBar />
-      {waiting ? <p className="text-sm text-warn">{waiting} fix(es) waiting on Michael — see his tab.</p> : null}
       {flags.length ? (
         <Card>
           <h2 className="font-display text-xl text-cream">Hold</h2>
@@ -145,53 +140,54 @@ function JimDesk() {
 function JimCard({ item }: { item: QueueItem }) {
   const [reply, setReply] = useState(item.reply ?? "");
   const [note, setNote] = useState("");
+  const [paste, setPaste] = useState("");
   const saveDraft = useFloor((s) => s.saveDraft);
   const approveReview = useFloor((s) => s.approveReview);
   const rejectReview = useFloor((s) => s.rejectReview);
-  const giveToMichael = useFloor((s) => s.giveToMichael);
+  const askGrok = useFloor((s) => s.askGrok);
+  const useGrokDraft = useFloor((s) => s.useGrokDraft);
+  const dismissGrok = useFloor((s) => s.dismissGrok);
+  const grok = useFloor((s) => s.grokById[item.id]);
   return (
     <li className="rounded-lg border border-border bg-raised p-4">
       {item.test ? <Badge tone="warn">TEST</Badge> : null}
+      {grok?.status === "working" ? <Badge tone="live">Grok…</Badge> : null}
+      {grok?.status === "ready" ? <Badge tone="ok">Grok rewrite</Badge> : null}
       <p className="mt-2 text-sm text-muted">{item.from}</p>
       <p className="mt-1 text-cream">{item.preview}</p>
-      <textarea
-        className="mt-3 w-full rounded-sm border border-border bg-bg p-3 text-sm text-cream"
-        rows={4}
-        value={reply}
-        onChange={(e) => setReply(e.target.value)}
-      />
+      <textarea className="mt-3 w-full rounded-sm border border-border bg-bg p-3 text-sm text-cream" rows={4} value={reply} onChange={(e) => setReply(e.target.value)} />
       <div className="mt-3 flex flex-wrap gap-2">
         <Button size="sm" onClick={() => { saveDraft(item.id, reply); approveReview(item.id); }}>Approve</Button>
         <Button size="sm" variant="quiet" onClick={() => saveDraft(item.id, reply)}>Save edit</Button>
         <Button size="sm" variant="danger" onClick={() => rejectReview(item.id)}>Don’t send</Button>
       </div>
-      <div className="mt-3 flex gap-2">
-        <input
-          className="min-h-11 flex-1 rounded-sm border border-border bg-bg px-3 text-sm"
-          placeholder="What is wrong — give to Michael"
-          value={note}
-          onChange={(e) => setNote(e.target.value)}
-        />
-        <Button
-          size="sm"
-          variant="outline"
-          disabled={!note.trim()}
-          onClick={() => {
-            saveDraft(item.id, reply);
-            giveToMichael({
-              queueId: item.id,
-              from: "ben",
-              customer: item.preview,
-              jimSaid: reply,
-              benWants: note.trim(),
-              note: note.trim(),
-              test: item.test,
-            });
-            setNote("");
-          }}
-        >
-          To Michael
-        </Button>
+      <div className="mt-3 border-t border-border pt-3">
+        <p className="label">Fix with Grok</p>
+        <div className="mt-2 flex flex-wrap gap-2">
+          <input className="min-h-11 min-w-0 flex-1 rounded-sm border border-border bg-bg px-3 text-sm text-cream" placeholder="What is wrong (or leave blank)" value={note} onChange={(e) => setNote(e.target.value)} />
+          <Button size="sm" variant="outline" disabled={grok?.status === "working"} onClick={() => { saveDraft(item.id, reply); askGrok(item.id, note.trim()); }}>
+            {grok?.status === "working" ? "Asking…" : "Fix with Grok"}
+          </Button>
+        </div>
+        {grok?.status === "ready" && grok.draft ? (
+          <div className="mt-3 space-y-2">
+            <p className="text-sm text-muted">Grok rewrite</p>
+            <p className="text-pretty text-sm text-cream">{grok.draft}</p>
+            <div className="flex flex-wrap gap-2">
+              <Button size="sm" onClick={() => { useGrokDraft(item.id); setReply(grok.draft ?? reply); }}>Use this</Button>
+              <Button size="sm" variant="quiet" onClick={() => dismissGrok(item.id)}>Ignore</Button>
+            </div>
+          </div>
+        ) : null}
+        {grok?.status === "needs-chat" ? (
+          <div className="mt-3 space-y-2">
+            <p className="text-sm text-muted">No Grok key on this PC yet. Copy into your Grok chat, paste the rewrite below.</p>
+            {grok.error ? <p className="text-sm text-danger">{grok.error}</p> : null}
+            <Button size="sm" variant="quiet" onClick={() => grok.bundle && void navigator.clipboard.writeText(grok.bundle)}>Copy for Grok chat</Button>
+            <textarea className="min-h-20 w-full rounded-sm border border-border bg-bg p-3 text-sm" placeholder="Paste Grok rewrite here" value={paste} onChange={(e) => setPaste(e.target.value)} />
+            <Button size="sm" disabled={!paste.trim()} onClick={() => { saveDraft(item.id, paste.trim()); setReply(paste.trim()); setPaste(""); dismissGrok(item.id); }}>Use this</Button>
+          </div>
+        ) : null}
       </div>
     </li>
   );
@@ -202,7 +198,7 @@ function MichaelDesk() {
   const markFix = useFloor((s) => s.markFix);
   return (
     <Card>
-      <h2 className="font-display text-xl text-cream">Michael — fixes</h2>
+      <h2 className="font-display text-xl text-cream">Michael — local FAQ surgery</h2>
       <ul className="mt-4 space-y-3">
         {fixes.length === 0 ? <li className="text-sm text-muted">No tickets.</li> : null}
         {fixes.map((f) => (
@@ -251,9 +247,7 @@ function ShopDesk() {
           <Button size="sm" variant="quiet" onClick={pauseJim}>Pause Jim</Button>
           <Button size="sm" onClick={startSystem}>Start</Button>
           <Button size="sm" variant="danger" onClick={stopSystem}>Stop</Button>
-          <Button size="sm" variant={testMode ? "default" : "outline"} onClick={() => setTestMode(!testMode)}>
-            Test {testMode ? "on" : "off"}
-          </Button>
+          <Button size="sm" variant={testMode ? "default" : "outline"} onClick={() => setTestMode(!testMode)}>Test {testMode ? "on" : "off"}</Button>
         </div>
       </Card>
       <Card>
@@ -269,9 +263,7 @@ function ShopDesk() {
         <h2 className="font-display text-xl text-cream">Models</h2>
         <ul className="mt-3 space-y-2 text-sm">
           {models.map((m) => (
-            <li key={m.id}>
-              {m.tag} {m.loaded ? "· loaded" : ""} {m.onDisk ? "· on disk" : ""}
-            </li>
+            <li key={m.id}>{m.tag} {m.loaded ? "· loaded" : ""} {m.onDisk ? "· on disk" : ""}</li>
           ))}
         </ul>
       </Card>
