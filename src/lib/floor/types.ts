@@ -63,6 +63,14 @@ export type Activity = {
   test: boolean;
 };
 
+export type GrokFixState = {
+  status: "idle" | "working" | "ready" | "needs-chat";
+  draft?: string;
+  bundle?: string;
+  error?: string;
+  via?: "api" | "chat";
+};
+
 export type QueueItem = {
   id: string;
   channel: "sms" | "email" | "page";

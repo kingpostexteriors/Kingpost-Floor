@@ -47,6 +47,15 @@ export const postMichaelFix = createServerFn({ method: "POST" })
     return addFix(data);
   });
 
+export const postGrokFix = createServerFn({ method: "POST" })
+  .inputValidator(
+    (d: { from: string; customer: string; jimSaid: string; note: string; test: boolean }) => d,
+  )
+  .handler(async ({ data }) => {
+    const { rewriteWithGrok } = await import("./grok.server.ts");
+    return rewriteWithGrok(data);
+  });
+
 export const postFixStatus = createServerFn({ method: "POST" })
   .inputValidator((d: { id: string; status: FixTicket["status"] }) => d)
   .handler(async ({ data }): Promise<FloorSnapshot> => {
