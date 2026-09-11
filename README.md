@@ -2,6 +2,12 @@
 
 Grok’s charcoal shop command center. Separate from Dunder Mifflin (Claude).
 
-Do not Download ZIP yet — the runnable app is still being uploaded. Grok will say when it is ready.
+## Install
 
-Then: Node.js LTS → Download ZIP → unzip next to KingpostJim → double-click **Start Kingpost Command**.
+1. Install **Node.js LTS** once: https://nodejs.org
+2. Green **Code** → **Download ZIP**
+3. Unzip next to KingpostJim
+4. Double-click **Start Kingpost Command**
+5. First run takes a few minutes. Leave the black window open.
+
+Don’t Approve in Command and Dunder Mifflin at the same time.
