@@ -59,14 +59,26 @@ export function isMainModule(moduleUrl) {
   }
 }
 
+function resolveCommand(command, args, root) {
+  if (command === "vite") {
+    return { command: process.execPath, args: [join(root, "node_modules", "vite", "bin", "vite.js"), ...args] };
+  }
+  return { command, args };
+}
+
 function main(argv) {
   const [command, ...args] = argv;
   if (!command) {
     console.error("usage: node scripts/with-app-env.mjs <command> [args…]");
     process.exit(2);
   }
-  const env = mergeAppEnv(readAppEnv(projectRoot()), process.env);
-  const child = spawn(command, args, { stdio: "inherit", env });
+  const root = projectRoot();
+  const env = mergeAppEnv(readAppEnv(root), process.env);
+  const binDir = join(root, "node_modules", ".bin");
+  const sep = process.platform === "win32" ? ";" : ":";
+  env.PATH = `${binDir}${sep}${env.PATH || process.env.PATH || ""}`;
+  const resolved = resolveCommand(command, args, root);
+  const child = spawn(resolved.command, resolved.args, { stdio: "inherit", env, cwd: root, shell: false });
   for (const signal of ["SIGINT", "SIGTERM", "SIGHUP"]) {
     process.on(signal, () => child.kill(signal));
   }
