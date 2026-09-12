@@ -16,6 +16,7 @@ export function JimCard({ item }: { item: QueueItem }) {
   const rejectReview = useFloor((s) => s.rejectReview);
   const askGrok = useFloor((s) => s.askGrok);
   const grok = useFloor((s) => s.grokById[item.id]);
+  const when = formatWhen(item.at);
 
   if (!open) {
     return (
@@ -24,7 +25,7 @@ export function JimCard({ item }: { item: QueueItem }) {
         {item.status === "rejected" ? <Badge tone="danger">Won't send</Badge> : null}
         {item.sent ? <Badge>Sent</Badge> : null}
         <span className="shrink-0 text-muted">{item.from}</span>
-        <span className="w-36 shrink-0 text-xs text-muted">{formatWhen(item.at)}</span>
+        <span className="w-36 shrink-0 text-xs text-muted">{when}</span>
         <span className="min-w-0 flex-1 truncate text-cream">{item.preview}</span>
         <Button size="sm" variant="quiet" onClick={() => setOpen(true)}>Open</Button>
       </li>
@@ -39,7 +40,7 @@ export function JimCard({ item }: { item: QueueItem }) {
         {item.sent ? <Badge>Sent</Badge> : null}
         <button type="button" className="ml-auto text-xs text-muted" onClick={() => setOpen(false)}>Close</button>
       </div>
-      <p className="mt-1 text-sm text-muted">{item.from} {formatWhen(item.at) ? · ${formatWhen(item.at)}` : ""}</p>
+      <p className="mt-1 text-sm text-muted">{item.from}{when ? " · " + when : ""}</p>
       <p className="mt-1 text-cream">{item.preview}</p>
       <textarea className="mt-2 w-full rounded-sm border border-border bg-bg p-2 text-sm text-cream" rows={2} value={reply} onChange={(e) => setReply(e.target.value)} />
       {pending ? (
