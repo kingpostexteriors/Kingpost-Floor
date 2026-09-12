@@ -7,9 +7,10 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Meter } from "@/components/floor/meter";
 import { LiveBridge } from "@/components/floor/live-bridge";
+import { JimCard } from "@/components/floor/jim-card";
 import { healthOf, useFloor } from "@/lib/floor/store";
 import { TEST_LINE } from "@/lib/floor/types";
-import type { QueueItem, ShopMode } from "@/lib/floor/types";
+import type { ShopMode } from "@/lib/floor/types";
 
 export const Route = createFileRoute("/")({ component: Home });
 
@@ -47,7 +48,7 @@ function Command() {
             <p className="label">Kingpost Exteriors</p>
             <h1 className="mt-1 font-display text-3xl font-medium text-cream">Command</h1>
             <p className="mt-1 max-w-xl text-sm text-muted">
-              {pair === "paired" ? "Jim’s desk — edit, approve, or Fix with Grok." : "Waiting to read KingpostJim on this PC."}
+              {pair === "paired" ? "Jim's desk — edit, approve, or Fix with Grok." : "Waiting to read KingpostJim on this PC."}
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -119,14 +120,14 @@ function JimDesk() {
       ) : null}
       <Card>
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <h2 className="font-display text-xl text-cream">Jim’s replies</h2>
+          <h2 className="font-display text-xl text-cream">Jim's replies</h2>
           <div className="flex flex-wrap gap-2">
             <Badge>{queue.length} in file</Badge>
             <Badge tone={pending.length ? "warn" : "ok"}>{pending.length} need you</Badge>
           </div>
         </div>
         {jimDir ? <p className="mt-1 text-xs text-muted">{jimDir}</p> : null}
-        <ul className="mt-4 space-y-4">
+        <ul className="mt-3">
           {queue.length === 0 ? <li className="text-sm text-muted">Queue is empty.</li> : null}
           {queue.map((q) => (
             <JimCard key={q.id} item={q} />
@@ -134,64 +135,6 @@ function JimDesk() {
         </ul>
       </Card>
     </div>
-  );
-}
-
-function JimCard({ item }: { item: QueueItem }) {
-  const [reply, setReply] = useState(item.reply ?? "");
-  const [note, setNote] = useState("");
-  const [paste, setPaste] = useState("");
-  const saveDraft = useFloor((s) => s.saveDraft);
-  const approveReview = useFloor((s) => s.approveReview);
-  const rejectReview = useFloor((s) => s.rejectReview);
-  const askGrok = useFloor((s) => s.askGrok);
-  const useGrokDraft = useFloor((s) => s.useGrokDraft);
-  const dismissGrok = useFloor((s) => s.dismissGrok);
-  const grok = useFloor((s) => s.grokById[item.id]);
-  return (
-    <li className="rounded-lg border border-border bg-raised p-4">
-      {item.test ? <Badge tone="warn">TEST</Badge> : null}
-      {item.status === "rejected" ? <Badge tone="danger">Won’t send</Badge> : null}
-      {item.sent ? <Badge>Sent</Badge> : null}
-      {item.status === "approved" && !item.sent ? <Badge tone="ok">Approved</Badge> : null}
-      <p className="mt-2 text-sm text-muted">{item.from}</p>
-      <p className="mt-1 text-cream">{item.preview}</p>
-      <textarea className="mt-3 w-full rounded-sm border border-border bg-bg p-3 text-sm text-cream" rows={4} value={reply} onChange={(e) => setReply(e.target.value)} />
-      {item.status === "pending" && !item.sent ? (
-        <div className="mt-3 flex flex-wrap gap-2">
-          <Button size="sm" onClick={() => { saveDraft(item.id, reply); approveReview(item.id); }}>Approve</Button>
-          <Button size="sm" variant="quiet" onClick={() => saveDraft(item.id, reply)}>Save edit</Button>
-          <Button size="sm" variant="danger" onClick={() => rejectReview(item.id)}>Don’t send</Button>
-        </div>
-      ) : null}
-      <div className="mt-3 border-t border-border pt-3">
-        <p className="label">Fix with Grok</p>
-        <div className="mt-2 flex flex-wrap gap-2">
-          <input className="min-h-11 min-w-0 flex-1 rounded-sm border border-border bg-bg px-3 text-sm text-cream" placeholder="What is wrong (or leave blank)" value={note} onChange={(e) => setNote(e.target.value)} />
-          <Button size="sm" variant="outline" disabled={grok?.status === "working"} onClick={() => { saveDraft(item.id, reply); askGrok(item.id, note.trim()); }}>
-            {grok?.status === "working" ? "Asking…" : "Fix with Grok"}
-          </Button>
-        </div>
-        {grok?.status === "ready" && grok.draft ? (
-          <div className="mt-3 space-y-2">
-            <p className="text-sm text-muted">Grok rewrite</p>
-            <p className="text-pretty text-sm text-cream">{grok.draft}</p>
-            <div className="flex flex-wrap gap-2">
-              <Button size="sm" onClick={() => { useGrokDraft(item.id); setReply(grok.draft ?? reply); }}>Use this</Button>
-              <Button size="sm" variant="quiet" onClick={() => dismissGrok(item.id)}>Ignore</Button>
-            </div>
-          </div>
-        ) : null}
-        {grok?.status === "needs-chat" ? (
-          <div className="mt-3 space-y-2">
-            <p className="text-sm text-muted">No Grok key on this PC yet. Copy into your Grok chat, paste the rewrite below.</p>
-            <Button size="sm" variant="quiet" onClick={() => grok.bundle && void navigator.clipboard.writeText(grok.bundle)}>Copy for Grok chat</Button>
-            <textarea className="min-h-20 w-full rounded-sm border border-border bg-bg p-3 text-sm" placeholder="Paste Grok rewrite here" value={paste} onChange={(e) => setPaste(e.target.value)} />
-            <Button size="sm" disabled={!paste.trim()} onClick={() => { saveDraft(item.id, paste.trim()); setReply(paste.trim()); setPaste(""); dismissGrok(item.id); }}>Use this</Button>
-          </div>
-        ) : null}
-      </div>
-    </li>
   );
 }
 
