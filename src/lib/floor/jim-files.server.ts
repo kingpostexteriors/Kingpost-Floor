@@ -18,13 +18,19 @@ function asNum(v: unknown, fallback: number) {
   if (typeof v === "string" && v.trim()) { const n = Number(v); if (Number.isFinite(n)) return n; }
   return fallback;
 }
+function whenOf(raw: Raw) {
+  const v = raw.ts ?? raw.sent_at ?? raw.date ?? raw.reviewed_at;
+  if (typeof v === "number" && Number.isFinite(v)) return v > 1e12 ? v : v * 1000;
+  const n = Date.parse(asStr(v));
+  return Number.isFinite(n) ? n : 0;
+}
 async function readJsonl(file: string): Promise<Raw[]> {
   if (!existsSync(file)) return [];
   return parseQueueFile(await readFile(file, "utf8"));
 }
 async function writeJsonl(file: string, rows: Raw[]) {
   const tmp = file + ".tmp";
-  await writeFile(tmp, rows.map((r) => JSON.stringify(r)).join("\n") + (rows.length ? "\n" : ""), "utf8");
+  await writeFile(tmp, JSON.stringify(rows) + "\n", "utf8");
   await rename(tmp, file);
 }
 function sourceOf(raw: Raw): ReplySource {
@@ -61,6 +67,7 @@ export function toQueueItem(raw: Raw, i: number): QueueItem {
     urgent: asBool(raw.is_urgent),
     sent,
     sendError: asStr(raw.error) || undefined,
+    at: whenOf(raw),
   };
 }
 function toActivity(raw: Raw, i: number): Activity {
@@ -126,7 +133,7 @@ export async function readSnapshot(): Promise<FloorSnapshot> {
   return {
     live: true,
     jimDir: jimDir(),
-    queue: rows.map(toQueueItem).sort((a, b) => rank(a) - rank(b)),
+    queue: rows.map(toQueueItem).sort((a, b) => rank(a) - rank(b) || (b.at ?? 0) - (a.at ?? 0)),
     sendLog: sends.map(toActivity).sort((a, b) => b.at - a.at),
     hardware: idleHw(),
     hwLive: false,
