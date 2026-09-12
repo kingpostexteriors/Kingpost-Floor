@@ -87,12 +87,7 @@ function CommandBar() {
   return (
     <Card>
       <form onSubmit={onSubmit} className="flex gap-2">
-        <input
-          className="min-h-11 flex-1 rounded-sm border border-border bg-raised px-3 text-sm text-cream"
-          placeholder="Tell Command — pause Jim or what is wrong with a reply"
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-        />
+        <input className="min-h-11 flex-1 rounded-sm border border-border bg-raised px-3 text-sm text-cream" placeholder="Tell Command — pause Jim or what is wrong with a reply" value={text} onChange={(e) => setText(e.target.value)} />
         <Button type="submit">Do it</Button>
       </form>
       {reply ? <p className="mt-3 text-sm text-muted">{reply}</p> : null}
@@ -102,9 +97,10 @@ function CommandBar() {
 
 function JimDesk() {
   const queue = useFloor((s) => s.queue);
+  const jimDir = useFloor((s) => s.jimDir);
   const flags = useFloor((s) => s.flags);
   const resolveFlag = useFloor((s) => s.resolveFlag);
-  const pending = queue.filter((q) => q.status === "pending");
+  const pending = queue.filter((q) => q.status === "pending" && !q.sent);
   return (
     <div className="space-y-4">
       <CommandBar />
@@ -122,10 +118,14 @@ function JimDesk() {
         </Card>
       ) : null}
       <Card>
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-2">
           <h2 className="font-display text-xl text-cream">Jim’s replies</h2>
-          <Badge tone={pending.length ? "warn" : "ok"}>{pending.length} need you</Badge>
+          <div className="flex flex-wrap gap-2">
+            <Badge>{queue.length} in file</Badge>
+            <Badge tone={pending.length ? "warn" : "ok"}>{pending.length} need you</Badge>
+          </div>
         </div>
+        {jimDir ? <p className="mt-1 text-xs text-muted">{jimDir}</p> : null}
         <ul className="mt-4 space-y-4">
           {queue.length === 0 ? <li className="text-sm text-muted">Queue is empty.</li> : null}
           {queue.map((q) => (
@@ -151,16 +151,19 @@ function JimCard({ item }: { item: QueueItem }) {
   return (
     <li className="rounded-lg border border-border bg-raised p-4">
       {item.test ? <Badge tone="warn">TEST</Badge> : null}
-      {grok?.status === "working" ? <Badge tone="live">Grok…</Badge> : null}
-      {grok?.status === "ready" ? <Badge tone="ok">Grok rewrite</Badge> : null}
+      {item.status === "rejected" ? <Badge tone="danger">Won’t send</Badge> : null}
+      {item.sent ? <Badge>Sent</Badge> : null}
+      {item.status === "approved" && !item.sent ? <Badge tone="ok">Approved</Badge> : null}
       <p className="mt-2 text-sm text-muted">{item.from}</p>
       <p className="mt-1 text-cream">{item.preview}</p>
       <textarea className="mt-3 w-full rounded-sm border border-border bg-bg p-3 text-sm text-cream" rows={4} value={reply} onChange={(e) => setReply(e.target.value)} />
-      <div className="mt-3 flex flex-wrap gap-2">
-        <Button size="sm" onClick={() => { saveDraft(item.id, reply); approveReview(item.id); }}>Approve</Button>
-        <Button size="sm" variant="quiet" onClick={() => saveDraft(item.id, reply)}>Save edit</Button>
-        <Button size="sm" variant="danger" onClick={() => rejectReview(item.id)}>Don’t send</Button>
-      </div>
+      {item.status === "pending" && !item.sent ? (
+        <div className="mt-3 flex flex-wrap gap-2">
+          <Button size="sm" onClick={() => { saveDraft(item.id, reply); approveReview(item.id); }}>Approve</Button>
+          <Button size="sm" variant="quiet" onClick={() => saveDraft(item.id, reply)}>Save edit</Button>
+          <Button size="sm" variant="danger" onClick={() => rejectReview(item.id)}>Don’t send</Button>
+        </div>
+      ) : null}
       <div className="mt-3 border-t border-border pt-3">
         <p className="label">Fix with Grok</p>
         <div className="mt-2 flex flex-wrap gap-2">
@@ -182,7 +185,6 @@ function JimCard({ item }: { item: QueueItem }) {
         {grok?.status === "needs-chat" ? (
           <div className="mt-3 space-y-2">
             <p className="text-sm text-muted">No Grok key on this PC yet. Copy into your Grok chat, paste the rewrite below.</p>
-            {grok.error ? <p className="text-sm text-danger">{grok.error}</p> : null}
             <Button size="sm" variant="quiet" onClick={() => grok.bundle && void navigator.clipboard.writeText(grok.bundle)}>Copy for Grok chat</Button>
             <textarea className="min-h-20 w-full rounded-sm border border-border bg-bg p-3 text-sm" placeholder="Paste Grok rewrite here" value={paste} onChange={(e) => setPaste(e.target.value)} />
             <Button size="sm" disabled={!paste.trim()} onClick={() => { saveDraft(item.id, paste.trim()); setReply(paste.trim()); setPaste(""); dismissGrok(item.id); }}>Use this</Button>
