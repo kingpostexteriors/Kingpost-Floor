@@ -1,18 +1,21 @@
 import { createServerFn } from "@tanstack/react-start";
 import type { FloorControl, FloorSnapshot, FixTicket, ReviewStatus } from "./types";
 
-export const getFloorSnapshot = createServerFn({ method: "POST" }).handler(
-  async (): Promise<FloorSnapshot> => {
-    const { readSnapshot } = await import("./jim-files.server.ts");
-    return readSnapshot();
-  },
-);
+export const getFloorSnapshot = createServerFn({ method: "POST" }).handler(async (): Promise<FloorSnapshot> => {
+  const { readSnapshot } = await import("./jim-files.server.ts");
+  return readSnapshot();
+});
 
 export const postReviewStatus = createServerFn({ method: "POST" })
   .inputValidator((d: { id: string; status: ReviewStatus }) => d)
   .handler(async ({ data }): Promise<FloorSnapshot> => {
     const { setReview } = await import("./jim-files.server.ts");
-    return setReview(data.id, data.status);
+    const snap = await setReview(data.id, data.status);
+    if (data.status === "approved") {
+      const { sendApprovedNow } = await import("./hermes.server.ts");
+      await sendApprovedNow();
+    }
+    return snap;
   });
 
 export const postFloorControl = createServerFn({ method: "POST" })
@@ -20,6 +23,9 @@ export const postFloorControl = createServerFn({ method: "POST" })
   .handler(async ({ data }): Promise<FloorSnapshot> => {
     const { writeControl, readSnapshot } = await import("./jim-files.server.ts");
     await writeControl(data);
+    const { startHermes, stopHermes } = await import("./hermes.server.ts");
+    if (data.systemOn === true) await startHermes();
+    if (data.systemOn === false) await stopHermes();
     return readSnapshot();
   });
 
@@ -31,26 +37,14 @@ export const postJimDraft = createServerFn({ method: "POST" })
   });
 
 export const postMichaelFix = createServerFn({ method: "POST" })
-  .inputValidator(
-    (d: {
-      queueId?: string;
-      from: string;
-      customer: string;
-      jimSaid: string;
-      benWants: string;
-      note: string;
-      test: boolean;
-    }) => d,
-  )
+  .inputValidator((d: { queueId?: string; from: string; customer: string; jimSaid: string; benWants: string; note: string; test: boolean }) => d)
   .handler(async ({ data }): Promise<FloorSnapshot> => {
     const { addFix } = await import("./jim-files.server.ts");
     return addFix(data);
   });
 
 export const postGrokFix = createServerFn({ method: "POST" })
-  .inputValidator(
-    (d: { from: string; customer: string; jimSaid: string; note: string; test: boolean }) => d,
-  )
+  .inputValidator((d: { from: string; customer: string; jimSaid: string; note: string; test: boolean }) => d)
   .handler(async ({ data }) => {
     const { rewriteWithGrok } = await import("./grok.server.ts");
     return rewriteWithGrok(data);
