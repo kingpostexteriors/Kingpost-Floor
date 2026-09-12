@@ -2,6 +2,11 @@
 title Kingpost Command
 cd /d "%~dp0"
 
+if exist ".git\" (
+  echo Checking for updates...
+  git pull --ff-only
+)
+
 set "KINGPOST_JIM_DIR=C:\Users\1951\KingpostJim"
 if not exist "%KINGPOST_JIM_DIR%\gmail_pending_review.jsonl" (
   if exist "%~dp0..\KingpostJim\gmail_pending_review.jsonl" (
