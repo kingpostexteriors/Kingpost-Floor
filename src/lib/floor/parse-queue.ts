@@ -15,16 +15,18 @@ export function parseQueueFile(text: string): Raw[] {
       if (rows.length) return rows;
     }
     const one = asObj(v);
-    if (one) return [one];
+    if (one) {
+      const keys = Object.keys(one);
+      const numeric = keys.filter((k) => /^\d+$/.test(k)).map((k) => asObj(one[k])).filter((x): x is Raw => !!x);
+      if (numeric.length > 1) return numeric;
+    }
   } catch {
     /* split */
   }
-  const parts = t.split(/\}\s*\{/);
   const rows: Raw[] = [];
+  const parts = t.split(/\}\s*,?\s*\{/);
   for (let i = 0; i < parts.length; i++) {
     let chunk = parts[i].trim();
-    if (!chunk.startsWith("{")) chunk = "{" + chunk;
-    if (!chunk.endsWith("}")) chunk = chunk + "}";
     chunk = chunk.replace(/^\[/, "").replace(/\]$/, "");
     if (!chunk.startsWith("{")) chunk = "{" + chunk;
     if (!chunk.endsWith("}")) chunk = chunk + "}";
