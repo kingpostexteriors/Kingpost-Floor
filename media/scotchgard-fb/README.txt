@@ -1,0 +1,1 @@
+Scotchgard FB graphic staging for Kingpost Exteriors page post 2026-09-19. Temporary transfer files.
